@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MapLibre + PMTiles — Starter</title>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+  <style>html, body, #map { height: 100%; margin: 0; }</style>
+</head>
+<body>
+  <div id="map"></div>
+  <script type="module">
+    import maplibregl from 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';
+    import { Protocol } from 'https://unpkg.com/pmtiles@3.0.6/dist/index.js';
+
+    // 1) Host a PMTiles basemap (e.g., planet.pmtiles) on static storage (S3/R2) with CORS.
+    // 2) Replace the pmtiles URL below.
+    // 3) Ensure your glyphs/sprites URLs are reachable.
+
+    maplibregl.addProtocol('pmtiles', new Protocol().tile);
+
+    const style = {
+      version: 8,
+      glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+      sources: {
+        basemap: {
+          type: 'vector',
+          url: 'pmtiles://planet.pmtiles' // <- replace with your actual URL
+        },
+        stories: {
+          type: 'geojson',
+          data: './stories.geojson',
+          cluster: true,
+          clusterRadius: 40
+        }
+      },
+      layers: [
+        // Minimal example: fill land and water with a pastel palette.
+        { id: 'land', type: 'fill', source: 'basemap', 'source-layer': 'land',
+          paint: { 'fill-color': '#f7cfe0' } },
+        { id: 'water', type: 'fill', source: 'basemap', 'source-layer': 'water',
+          paint: { 'fill-color': '#cfd8ff' } },
+        // Add roads, parks, labels etc. according to your schema.
+        { id: 'points', type: 'circle', source: 'stories', filter: ['!has','point_count'],
+          paint: { 'circle-radius': 6, 'circle-color': '#000', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' } },
+        { id: 'clusters', type: 'circle', source: 'stories', filter: ['has','point_count'],
+          paint: { 'circle-radius': 14, 'circle-color': '#111', 'circle-opacity': 0.85 } },
+        { id: 'cluster-count', type: 'symbol', source: 'stories', filter: ['has','point_count'],
+          layout: { 'text-field': ['get','point_count_abbreviated'], 'text-size': 12 },
+          paint: { 'text-color': '#fff' } }
+      ]
+    };
+
+    const map = new maplibregl.Map({ container: 'map', style, center: [-20, 25], zoom: 2 });
+  </script>
+</body>
+</html>

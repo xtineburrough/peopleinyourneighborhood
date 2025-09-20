@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Queer Stories Map — MapLibre POC</title>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .maplibregl-popup-content { font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script type="module">
+    import maplibregl from 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';
+
+    // Quick-start style: MapLibre demo style (vector tiles)
+    const styleUrl = 'https://demotiles.maplibre.org/style.json';
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: styleUrl,
+      center: [-20, 25],
+      zoom: 2
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    map.on('load', async () => {
+      const res = await fetch('./stories.geojson');
+      const stories = await res.json();
+
+      map.addSource('stories', {
+        type: 'geojson',
+        data: stories,
+        cluster: true,
+        clusterRadius: 40,
+        clusterMaxZoom: 12
+      });
+
+      map.addLayer({
+        id: 'story-clusters',
+        type: 'circle',
+        source: 'stories',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-radius': ['step', ['get', 'point_count'], 12, 10, 16, 50, 22],
+          'circle-color': '#111',
+          'circle-opacity': 0.85
+        }
+      });
+
+      map.addLayer({
+        id: 'story-count',
+        type: 'symbol',
+        source: 'stories',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 12
+        },
+        paint: { 'text-color': '#fff' }
+      });
+
+      map.addLayer({
+        id: 'story-points',
+        type: 'circle',
+        source: 'stories',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#000',
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff'
+        }
+      });
+
+      map.on('click', 'story-points', (e) => {
+        const feature = e.features[0];
+        const html = `<div class="story">${feature.properties.text}</div>`;
+        new maplibregl.Popup({ closeButton: true })
+          .setLngLat(e.lngLat)
+          .setHTML(html)
+          .addTo(map);
+      });
+
+      map.on('mouseenter', 'story-points', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'story-points', () => map.getCanvas().style.cursor = '');
+    });
+  </script>
+</body>
+</html>

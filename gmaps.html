@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Queer Stories Map — Google Maps Styled</title>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .gm-style-iw { max-width: 280px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const PINS = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-73.5673, 45.5017]}, "properties": {"text": "Montreal: Where the idea for this project clicked for me\u2014walking near Parc La Fontaine, feeling seen."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-0.1276, 51.5074]}, "properties": {"text": "London: First Pride with friends; we mapped our own route and it felt like home."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [151.2093, -33.8688]}, "properties": {"text": "Sydney: A quiet bench near the Royal Botanic Garden\u2014where I finally said the words out loud."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [2.3522, 48.8566]}, "properties": {"text": "Paris: Lost in the Marais, found a bookstore and a note tucked inside a zine that made my day."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-97.7431, 30.2672]}, "properties": {"text": "Austin: Coffee shop open mic\u2014first time reading a poem about us."}}]};
+
+    // Pastel-ish styled map (simplified example)
+    const STYLES = [
+      { elementType: 'geometry', stylers: [{ color: '#f7cfe0' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfd8ff' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+      { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#d3f3d4' }] },
+      { featureType: 'transit.line', elementType: 'geometry', stylers: [{ color: '#ffb3a7' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#333333' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#f7cfe0' }] }
+    ];
+
+    let map;
+    async function initMap() {
+      const center = { lat: 25, lng: -20 };
+      map = new google.maps.Map(document.getElementById('map'), {
+        center, zoom: 2, styles: STYLES, mapTypeControl: false
+      });
+
+      const { MarkerClusterer } = await google.maps.importLibrary('markerclusterer');
+
+      const markers = PINS.features.map((f) => {
+        const m = new google.maps.Marker({ position: { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] } });
+        const iw = new google.maps.InfoWindow({ content: `<div class=\"story\">${f.properties.text}</div>` });
+        m.addListener('click', () => iw.open(map, m));
+        return m;
+      });
+
+      new MarkerClusterer({ map, markers });
+    }
+  </script>
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=REPLACE_WITH_YOUR_API_KEY&callback=initMap&libraries=marker,markerclusterer">
+  </script>
+</body>
+</html>
